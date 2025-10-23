@@ -1,20 +1,43 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { create } from '@/routes/posts';
+import { create, index } from '@/routes/posts';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import {Table, TableBody, TableCaption, TableHeader, TableHead, TableCell, TableRow} from '@/components/ui/table/';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu/';
 import Button from '@/components/ui/button/Button.vue';
 import { MoreVertical } from 'lucide-vue-next';
-
-
+import {Pagination, PaginationFirst, PaginationLast, PaginationEllipsis, PaginationNext, PaginationPrevious} from '@/components/ui/pagination';
+import {PaginationList, PaginationListItem} from 'reka-ui';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Posts',
         href: create().url,
     },
 ];
+
+    interface PaginationLink {
+    url: string | null;
+    label: string;
+    page?: number | null;
+    active: boolean;
+}
+
+interface PaginatedResponse {
+    current_page: number;
+    data: Post[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: PaginationLink[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}
 
 type Post = {
     id: number,
@@ -29,7 +52,7 @@ type Post = {
 };
 
 defineProps<{
-    posts: Post[];
+    posts: PaginatedResponse;
 }>();
 
 </script>
@@ -39,7 +62,7 @@ defineProps<{
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"></div>
-        <pre>{{ posts }}</pre>
+        <!---<pre>{{ posts }}</pre>-->
         <Table>
             <TableCaption>A list of your recent invoices.</TableCaption>
             <TableHeader>
@@ -57,7 +80,7 @@ defineProps<{
             </TableRow>
             </TableHeader>
             <TableBody>
-                <TableRow v-for="post in posts" :key="post.id">
+                <TableRow v-for="post in posts.data" :key="post.id">
                 <TableCell class="font-medium">{{ post.id }}</TableCell>
                 <TableCell>{{ post.title }}</TableCell>
                 <TableCell>{{ post.author }}</TableCell>
@@ -80,5 +103,29 @@ defineProps<{
             </TableRow>
             </TableBody>
         </Table>
+            <Pagination
+            v-slot="{ page }"
+            :page="posts.current_page"
+            :items-per-page="posts.per_page"
+            :total="posts.total"
+            class="mt-2 w-full"
+            @update:page="(page) => router.get(index().url, {page: page})">
+                <PaginationList v-slot="{ items }" class="flex items-center gap-1">
+                    <PaginationFirst />
+                    <PaginationPrevious />
+
+                    <template v-for="(item, index) in items">
+                        <PaginationListItem v-if="item.type === 'page'" :key="index" :value="item.value" as-child>
+                            <Button class="h-10 w-10 p-0" :variant="item.value === page ? 'default' : 'outline'">
+                                {{ item.value }}
+                            </Button>
+                        </PaginationListItem>
+                        <PaginationEllipsis v-else :key="item.type" :index="index" />
+                    </template>
+
+                    <PaginationNext />
+                    <PaginationLast />
+                </PaginationList>
+            </Pagination>
     </AppLayout>
 </template>
