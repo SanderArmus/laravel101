@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('posts', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+                $table->id();
+                $table->string('title');
+                $table->text('content');
+                $table->string('author');
+                $table->boolean('published')->default(false);
+                $table->timestamps();
         });
     }
 
@@ -24,4 +28,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('posts');
     }
+
+
 };
